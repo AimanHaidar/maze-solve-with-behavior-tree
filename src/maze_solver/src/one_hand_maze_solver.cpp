@@ -51,6 +51,11 @@ Direction relativeDirection(const Position& current, Direction rel) {
     }
 }
 
+void move(Position& current, Direction move_dir) {
+    current = getNextPosition(current, move_dir);
+    current.direction = move_dir;
+}
+
 Maze maze = {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,2,0,0,0,1,0,0,0,1,0,0,0,3,1},
@@ -91,8 +96,9 @@ public:
     BT::NodeStatus onRunning(){
         // next position toward the wall hand
         Position nextPosition = getNextPosition(current_position, relativeDirection(current_position, wall_hand_));
-        if(maze[nextPosition.y][nextPosition.x] == WALL) {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand %s is open");
+        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand way %s is open", wall_hand_ == LEFT ? "left" : "right");
+            move(current_position, relativeDirection(current_position, wall_hand_));
             return BT::NodeStatus::SUCCESS;
         } else {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand %s is closed");
