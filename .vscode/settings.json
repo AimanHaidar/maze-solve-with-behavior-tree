@@ -21,6 +21,9 @@
     },
     "C_Cpp.default.browse.path": [
         "${workspaceFolder}/src"
-    ]
+    ],
+    "files.associations": {
+        "stdexcept": "cpp"
+    }
 
 }
