@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="one_hand_maze_solver">
+    <Sequence>
+      <IsWallHandWayOpen wall_hand="left"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="IsWallHandWayOpen"
+            editable="true">
+      <input_port name="wall_hand"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>
