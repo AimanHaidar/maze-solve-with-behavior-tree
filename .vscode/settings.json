@@ -1,0 +1,26 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "~/.local/share/pipx"
+    ],
+    "python.analysis.extraPaths": [
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "~/.local/share/pipx"
+    ],
+
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/build": true,
+        "**/install": true,
+        "**/log": true
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/install": true
+    },
+    "C_Cpp.default.browse.path": [
+        "${workspaceFolder}/src"
+    ]
+
+}
