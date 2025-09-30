@@ -2,7 +2,7 @@
 
 enum Direction {UP, DOWN, LEFT, RIGHT};
 enum CellType {WALL=1, PATH=0, START=2, GOAL=3};
-struct Position {
+struct Pose {
     uint8_t x;
     uint8_t y;
     Direction direction;
@@ -10,7 +10,7 @@ struct Position {
 
 using Maze = std::vector<std::vector<int>>;
 
-Position initialPosition = {1, 1, RIGHT};
+Pose initialPose = {1, 1, RIGHT};
 
 Maze small_maze = {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
