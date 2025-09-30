@@ -41,14 +41,13 @@ maze = [
 path = [(1,1), (1,2), (1,3), (2,3), (3,3), (3,2), (3,1)]
 
 class MazeWidget(QWidget):
-    def __init__(self, maze, path):
+    def __init__(self, maze):
         super().__init__()
         self.maze = maze
         self.rows = len(maze)
         self.cols = len(maze[0])
         self.setFixedSize(self.cols*CELL_SIZE, self.rows*CELL_SIZE)
 
-        self.path = path
         self.step = 0
         self.robot_dir = RIGHT  # initial orientation
 
@@ -110,13 +109,14 @@ class MazeWidget(QWidget):
             painter.drawLine(center_x, center_y + offset, center_x + radius, center_y + offset)
 
 class MazeWindow(QMainWindow):
-    def __init__(self, maze, path):
+    def __init__(self, maze):
         super().__init__()
         self.setWindowTitle("Maze Robot Viewer")
-        self.setCentralWidget(MazeWidget(maze, path))
+        self.maze_widget = MazeWidget(maze)
+        self.setCentralWidget(self.maze_widget)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MazeWindow(maze, path)
+    window = MazeWindow(maze)
     window.show()
     sys.exit(app.exec_())

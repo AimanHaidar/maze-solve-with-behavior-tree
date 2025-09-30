@@ -8,7 +8,8 @@
       "includePath": [
         "/opt/ros/jazzy/include/**",
         "/home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/include/**",
-        "/usr/include/**"
+        "/usr/include/**",
+        "/home/aymanhadair/ROS2/BahaviorTree/install/maze_interfaces/include/maze_interfaces/**"
       ],
       "name": "ros2",
       "intelliSenseMode": "gcc-x64",
