@@ -91,7 +91,7 @@ public:
     BT::NodeStatus onRunning(){
         // next Pose toward the wall hand
         Pose nextPose = getNextPose(currentPose, absoluteDirection(currentPose, wall_hand_));
-        if(maze[nextPose.y][nextPose.x] == PATH || maze[nextPose.y][nextPose.x] == GOAL) {
+        if(maze[nextPose.y][nextPose.x] != WALL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand way is open");
             currentPose = nextPose;
             config().blackboard->set("currentPose", currentPose);
@@ -160,7 +160,7 @@ public:
     BT::NodeStatus onRunning() {
         Pose nextPose = getNextPose(currentPose, absoluteDirection(currentPose, UP));
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Checking front cell at (x=%d, y=%d)", nextPose.x, nextPose.y);
-        if(maze[nextPose.y][nextPose.x] == PATH || maze[nextPose.y][nextPose.x] == GOAL) {
+        if(maze[nextPose.y][nextPose.x] != WALL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Front way is open");
             currentPose = nextPose;
             config().blackboard->set("currentPose", currentPose);
@@ -196,7 +196,7 @@ public:
 
     BT::NodeStatus onRunning() {
         Pose nextPose = getNextPose(currentPose, absoluteDirection(currentPose, other_hand_));
-        if(maze[nextPose.y][nextPose.x] == PATH || maze[nextPose.y][nextPose.x] == GOAL) {
+        if(maze[nextPose.y][nextPose.x] != WALL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Other hand way is open");
             currentPose = nextPose;
             config().blackboard->set("currentPose", currentPose);
@@ -230,7 +230,7 @@ public:
 
     BT::NodeStatus onRunning() {
         Pose nextPose = getNextPose(currentPose, absoluteDirection(currentPose, DOWN));
-        if(maze[nextPose.y][nextPose.x] == PATH || maze[nextPose.y][nextPose.x] == GOAL) {
+        if(maze[nextPose.y][nextPose.x] != WALL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Back way is open");
             currentPose = nextPose;
             config().blackboard->set("currentPose", currentPose);
