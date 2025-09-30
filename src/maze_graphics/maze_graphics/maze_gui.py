@@ -82,7 +82,7 @@ class MazeWidget(QWidget):
                         painter.drawLine(top_left_x + CELL_SIZE, top_left_y, top_left_x + CELL_SIZE, top_left_y + CELL_SIZE)
 
         # Draw robot
-        rx, ry = self.current_pose.x, self.current_pose.y
+        rx, ry = int(self.current_pose.x), int(self.current_pose.y)
         center_x = rx * CELL_SIZE + CELL_SIZE//2
         center_y = ry * CELL_SIZE + CELL_SIZE//2
         radius = CELL_SIZE//3
