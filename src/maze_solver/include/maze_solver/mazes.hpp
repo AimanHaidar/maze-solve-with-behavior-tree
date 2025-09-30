@@ -6,9 +6,14 @@ struct Pose {
     uint8_t x;
     uint8_t y;
     Direction direction;
+    bool operator==(const Pose& other) const {
+        return x == other.x && y == other.y && direction == other.direction;
+    }
 };
 
 using Maze = std::vector<std::vector<int>>;
+
+using MazeRecord = std::vector<std::vector<Pose>>;
 
 Pose initialPose = {1, 1, RIGHT};
 
