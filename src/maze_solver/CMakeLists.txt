@@ -14,11 +14,15 @@ find_package(behaviortree_cpp REQUIRED)
 add_executable( one_hand_maze_solver src/one_hand_maze_solver.cpp ) 
 ament_target_dependencies(one_hand_maze_solver rclcpp std_msgs behaviortree_cpp)
 
+include_directories(
+  include
+)
+
 install(TARGETS one_hand_maze_solver
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch trees 
+install(DIRECTORY launch trees include
   DESTINATION share/${PROJECT_NAME}
 )
 
