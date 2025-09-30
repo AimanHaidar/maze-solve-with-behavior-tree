@@ -5,8 +5,15 @@ this packages contain example of using behavior tree to solve maze and show grap
 ---
 
 ## Screenshots
-
+**maze:**
 ![Alt text](screenshots/maze.png)
+
+---
+
+**behavior tree:**
+the Is Node check and move the robot
+
+![Alt text](screenshots/behavior_tree_hor1.png)
 
 
 ## Usage
