@@ -27,6 +27,9 @@ Position getNextPosition(const Position current, Direction dir) {
         case LEFT:  next.x -= 1; break;
         case RIGHT: next.x += 1; break;
     }
+    if(dir!=current.direction){
+        next.direction = dir;
+    }
     return next;
 }
 /**
@@ -34,7 +37,7 @@ Position getNextPosition(const Position current, Direction dir) {
 *  @param rel the direction of the frame in which you want to get relative direction to it
 *  @return The absolute direction (relative to maze)
 */
-Direction absoluteDirection(const Position& current, Direction rel) {
+Direction absoluteDirection(const Position current, Direction rel) {
     switch (current.direction) {
         case UP:
             if (rel == LEFT) return LEFT;
@@ -93,6 +96,7 @@ public:
         currentPosition = config().blackboard->get<Position>("currentPosition");
         std::string wall_hand_str;
         getInput<std::string>("wall_hand", wall_hand_str);
+        
         if (wall_hand_str == "left") {
             this->wall_hand_ = LEFT;
         } else if (wall_hand_str == "right") {
@@ -100,6 +104,7 @@ public:
         } else {
             throw std::runtime_error("Invalid wall_hand input. Use 'left' or 'right'.");
         }
+        config().blackboard->set("wall_hand", this->wall_hand_);
 
         return BT::NodeStatus::RUNNING;
     }
@@ -192,6 +197,70 @@ private:
     Position currentPosition;
 };
 
+class IsOtherHandOpen : public BT::StatefulActionNode{
+public:
+    IsOtherHandOpen(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {}
+    
+    BT::NodeStatus onStart() {
+        currentPosition = config().blackboard->get<Position>("currentPosition");
+        other_hand_ = (config().blackboard->get<Direction>("wall_hand") == LEFT) ? RIGHT : LEFT;
+        return BT::NodeStatus::RUNNING;
+    } 
+
+    BT::NodeStatus onRunning() {
+        Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, other_hand_));
+        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Other hand way is open");
+            currentPosition = nextPosition;
+            config().blackboard->set("currentPosition", currentPosition);
+            return BT::NodeStatus::SUCCESS;
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Other hand way is closed");
+            return BT::NodeStatus::FAILURE;
+        }
+    }
+
+    void onHalted() { return; }
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+private:
+    Position currentPosition;
+    Direction other_hand_;
+};
+
+class IsBackOpen : public BT::StatefulActionNode{
+public:
+    IsBackOpen(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {}
+
+    BT::NodeStatus onStart() {
+        currentPosition = config().blackboard->get<Position>("currentPosition");
+        return BT::NodeStatus::RUNNING;
+    }
+
+    BT::NodeStatus onRunning() {
+        Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, DOWN));
+        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Back way is open");
+            currentPosition = nextPosition;
+            config().blackboard->set("currentPosition", currentPosition);
+            return BT::NodeStatus::SUCCESS;
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Back way is closed");
+            return BT::NodeStatus::FAILURE;
+        }
+    }
+
+    void onHalted() { return; }
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+private:
+    Position currentPosition;
+};
+
 class HandMazeSolver : public rclcpp::Node {
 public:
     HandMazeSolver() : Node("hand_maze_solver") {
@@ -208,10 +277,13 @@ private:
         blackboard_->set<rclcpp::Node::SharedPtr>("node", this->shared_from_this());
         blackboard_->set<Position>("currentPosition", initialPosition);
         blackboard_->set<Maze>("maze", maze);
+        blackboard_->set<Direction>("wall_hand", LEFT); // keep left hand on the wall
         //set tree
         factory_.registerNodeType<IsWallHandWayOpen>("IsWallHandWayOpen");
         factory_.registerNodeType<IsGoal>("IsGoal");
         factory_.registerNodeType<IsFrontOpen>("IsFrontOpen");
+        factory_.registerNodeType<IsOtherHandOpen>("IsOtherHandOpen");
+        factory_.registerNodeType<IsBackOpen>("IsBackOpen");
         // Load XML file
         this->declare_parameter<std::string>("tree_xml_file", "/home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/trees/one_hand_maze_solver.xml");
         std::string tree_file;

@@ -9,7 +9,7 @@
           <Fallback>
             <IsFrontOpen/>
             <Fallback>
-              <IsOtherHandOpen wall_hand="left"/>
+              <IsOtherHandOpen/>
               <IsBackOpen/>
             </Fallback>
           </Fallback>
@@ -27,9 +27,7 @@
     <Action ID="IsGoal"
             editable="true"/>
     <Action ID="IsOtherHandOpen"
-            editable="true">
-      <input_port name="wall_hand"/>
-    </Action>
+            editable="true"/>
     <Action ID="IsWallHandWayOpen"
             editable="true">
       <input_port name="wall_hand"/>
