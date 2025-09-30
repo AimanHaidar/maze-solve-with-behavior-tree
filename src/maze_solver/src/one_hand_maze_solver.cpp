@@ -5,18 +5,8 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "std_msgs/msg/int32.hpp"
 #include <string>
-
-enum Direction {UP, DOWN, LEFT, RIGHT};
-enum CellType {WALL=1, PATH=0, START=2, GOAL=3};
-struct Position {
-    uint8_t x;
-    uint8_t y;
-    Direction direction;
-};
-
-Position initialPosition = {1, 1, RIGHT};
-
-using Maze = std::vector<std::vector<int>>;
+#include <iostream>
+#include "maze_solver/mazes.hpp"
 
 // function to get the next position based on current position and direction
 Position getNextPosition(const Position current, Direction dir) {
@@ -71,19 +61,7 @@ void move(Position& current, Direction move_dir) {
     current.direction = move_dir;
 }
 
-Maze maze = {
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,2,0,0,0,1,0,0,0,1,0,0,0,3,1},
-        {1,0,1,1,0,1,0,1,0,1,0,1,1,0,1},
-        {1,0,1,0,0,0,0,1,0,0,0,0,1,0,1},
-        {1,0,1,0,1,1,1,1,1,1,1,0,1,0,1},
-        {1,0,0,0,1,0,0,0,0,0,1,0,1,0,1},
-        {1,1,1,0,1,0,1,1,1,0,1,0,1,0,1},
-        {1,0,0,0,0,0,1,0,0,0,1,0,0,0,1},
-        {1,0,1,1,1,1,1,0,1,1,1,1,1,0,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-    };
+
 
 using namespace std::chrono_literals;
 
@@ -93,6 +71,7 @@ public:
         : BT::StatefulActionNode(name, config){}
 
     BT::NodeStatus onStart() {
+        maze = config().blackboard->get<Maze>("maze");
         currentPosition = config().blackboard->get<Position>("currentPosition");
         std::string wall_hand_str;
         getInput<std::string>("wall_hand", wall_hand_str);
@@ -134,6 +113,7 @@ public:
 private:
     Direction wall_hand_;
     Position currentPosition;
+    Maze maze;
 };
 
 class IsGoal : public BT::StatefulActionNode {
@@ -142,6 +122,7 @@ public:
         : BT::StatefulActionNode(name, config) {        }
     
     BT::NodeStatus onStart() {
+        maze = config().blackboard->get<Maze>("maze");
         currentPosition = config().blackboard->get<Position>("currentPosition");
         return BT::NodeStatus::RUNNING;
     }
@@ -162,6 +143,7 @@ public:
 
 private:
     Position currentPosition;
+    Maze maze;
 };
 
 class IsFrontOpen : public BT::StatefulActionNode{
@@ -170,6 +152,7 @@ public:
         : BT::StatefulActionNode(name, config) {}
 
     BT::NodeStatus onStart() {
+        maze = config().blackboard->get<Maze>("maze");
         currentPosition = config().blackboard->get<Position>("currentPosition");
         return BT::NodeStatus::RUNNING;
     }
@@ -195,6 +178,7 @@ public:
     }
 
 private:
+    Maze maze;
     Position currentPosition;
 };
 
@@ -204,6 +188,7 @@ public:
         : BT::StatefulActionNode(name, config) {}
     
     BT::NodeStatus onStart() {
+        maze = config().blackboard->get<Maze>("maze");
         currentPosition = config().blackboard->get<Position>("currentPosition");
         other_hand_ = (config().blackboard->get<Direction>("wall_hand") == LEFT) ? RIGHT : LEFT;
         return BT::NodeStatus::RUNNING;
@@ -229,6 +214,7 @@ public:
 private:
     Position currentPosition;
     Direction other_hand_;
+    Maze maze;
 };
 
 class IsBackOpen : public BT::StatefulActionNode{
@@ -237,6 +223,7 @@ public:
         : BT::StatefulActionNode(name, config) {}
 
     BT::NodeStatus onStart() {
+        maze = config().blackboard->get<Maze>("maze");
         currentPosition = config().blackboard->get<Position>("currentPosition");
         return BT::NodeStatus::RUNNING;
     }
@@ -260,6 +247,7 @@ public:
     }
 private:
     Position currentPosition;
+    Maze maze;
 };
 
 class HandMazeSolver : public rclcpp::Node {
@@ -269,6 +257,21 @@ public:
         first_ = true;
         timer_ = this->create_wall_timer( 0.05s, std::bind(&HandMazeSolver::tick_function, this));
         blackboard_ = BT::Blackboard::create();
+        this->declare_parameter<std::string>("maze_size", "small");
+        std::string maze_size;
+        this->get_parameter("maze_size", maze_size);
+        std::cout << "Selected maze size: " << maze_size << std::endl;
+        if(maze_size == "small") {
+            maze = small_maze;
+        } else if(maze_size == "middle") {
+            maze = middle_maze;
+        } else if(maze_size == "big") {
+            maze = big_maze;
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Invalid maze_size %s parameter. Defaulting to 'small'.", maze_size.c_str());
+            maze = small_maze;
+        }
+
     }
 
 
@@ -308,6 +311,7 @@ private:
     BT::Blackboard::Ptr blackboard_;
     bool first_;
     BT::Tree tree_;
+    Maze maze;
 };
 
 int main(int argc, char * argv[]) {
