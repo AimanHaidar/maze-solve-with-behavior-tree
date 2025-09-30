@@ -250,6 +250,56 @@ private:
     Maze maze;
 };
 
+class RecordPose : public BT::StatefulActionNode {
+public:
+    RecordPose(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {}
+
+    BT::NodeStatus onStart(){
+        currentPose = config().blackboard->get<Pose>("currentPose");
+        recordedMaze = config().blackboard->get<MazeRecord>("recorded_maze");
+        return BT::NodeStatus::RUNNING;
+    }
+
+    BT::NodeStatus onRunning(){
+        recordedMaze[currentPose.y][currentPose.x] = currentPose;
+        config().blackboard->set("recorded_maze", recordedMaze);
+        return BT::NodeStatus::SUCCESS;
+    }
+    void onHalted() { return; }
+
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+private:
+    Pose currentPose;
+    MazeRecord recordedMaze;
+};
+
+class IsLoopState : public BT::ConditionNode {
+public:
+    IsLoopState(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::ConditionNode(name, config) {}
+    
+    BT::NodeStatus tick() {
+        currentPose = config().blackboard->get<Pose>("currentPose");
+        recordedMaze = config().blackboard->get<MazeRecord>("recorded_maze");
+        if((recordedMaze[currentPose.y][currentPose.x] == currentPose)) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "loop at (x=%d, y=%d)", currentPose.x, currentPose.y);
+            return BT::NodeStatus::SUCCESS;
+        } else{
+            return BT::NodeStatus::FAILURE;
+        }
+    }
+    void onHalted() { return; }
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+private:
+    MazeRecord recordedMaze;
+    Pose currentPose;
+};
+
 class HandMazeSolver : public rclcpp::Node {
 public:
     HandMazeSolver() : Node("hand_maze_solver") {
@@ -282,12 +332,16 @@ private:
         blackboard_->set<Pose>("currentPose", initialPose);
         blackboard_->set<Maze>("maze", maze);
         blackboard_->set<Direction>("wall_hand", LEFT); // keep left hand on the wall
+        MazeRecord recorded_maze(maze.size(), std::vector<Pose>(maze[0].size(), Pose(-1,-1,UP)));
+        blackboard_->set<MazeRecord>("recorded_maze", recorded_maze);
         //set tree
         factory_.registerNodeType<IsWallHandWayOpen>("IsWallHandWayOpen");
         factory_.registerNodeType<IsGoal>("IsGoal");
         factory_.registerNodeType<IsFrontOpen>("IsFrontOpen");
         factory_.registerNodeType<IsOtherHandOpen>("IsOtherHandOpen");
         factory_.registerNodeType<IsBackOpen>("IsBackOpen");
+        factory_.registerNodeType<RecordPose>("RecordPose");
+        factory_.registerNodeType<IsLoopState>("IsLoopState");
         // Load XML file
         this->declare_parameter<std::string>("tree_xml_file", "/home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/trees/one_hand_maze_solver.xml");
         std::string tree_file;

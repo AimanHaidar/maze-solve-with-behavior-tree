@@ -3,7 +3,9 @@
   <BehaviorTree ID="one_hand_maze_solver">
     <Fallback>
       <IsGoal/>
+      <IsLoopState/>
       <Sequence>
+        <RecordPose/>
         <Fallback>
           <IsWallHandWayOpen wall_hand="left"/>
           <Fallback>
@@ -26,12 +28,16 @@
             editable="true"/>
     <Action ID="IsGoal"
             editable="true"/>
+    <Condition ID="IsLoopState"
+               editable="true"/>
     <Action ID="IsOtherHandOpen"
             editable="true"/>
     <Action ID="IsWallHandWayOpen"
             editable="true">
       <input_port name="wall_hand"/>
     </Action>
+    <Action ID="RecordPose"
+            editable="true"/>
   </TreeNodesModel>
 
 </root>
