@@ -9,6 +9,10 @@ struct Pose {
     bool operator==(const Pose& other) const {
         return x == other.x && y == other.y && direction == other.direction;
     }
+
+    // Optional constructor for convenience
+    Pose() : x(0), y(0), direction(UP) {}
+    Pose(int x_, int y_, Direction dir_) : x(x_), y(y_), direction(dir_) {}
 };
 
 using Maze = std::vector<std::vector<int>>;
