@@ -1,0 +1,7 @@
+/maze_visualizer:
+  ros__parameters:
+    maze_size: big
+
+/hand_maze_solver:
+  ros__parameters:
+    tree_xml_file: /home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/trees/one_hand_maze_solver.xml
