@@ -3,12 +3,14 @@
   <BehaviorTree ID="one_hand_maze_solver">
     <Fallback>
       <IsGoal/>
-      <Fallback>
-        <IsWallHandWayOpen wall_hand="left"/>
+      <Sequence>
         <Fallback>
-          <IsFrontOpen/>
+          <IsWallHandWayOpen wall_hand="left"/>
+          <Fallback>
+            <IsFrontOpen/>
+          </Fallback>
         </Fallback>
-      </Fallback>
+      </Sequence>
     </Fallback>
   </BehaviorTree>
 

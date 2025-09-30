@@ -142,12 +142,13 @@ public:
         : BT::StatefulActionNode(name, config) {        }
     
     BT::NodeStatus onStart() {
+        currentPosition = config().blackboard->get<Position>("currentPosition");
         return BT::NodeStatus::RUNNING;
     }
 
     BT::NodeStatus onRunning() {
         if(maze[currentPosition.y][currentPosition.x] == GOAL) {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Goal Reached!");
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Goal Reached at (x=%d, y=%d)", currentPosition.x, currentPosition.y);
             return BT::NodeStatus::SUCCESS;
         } else {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Not at Goal yet.");
@@ -266,7 +267,7 @@ public:
     HandMazeSolver() : Node("hand_maze_solver") {
         RCLCPP_INFO(this->get_logger(), "Starting One Hand Maze Solver Node");
         first_ = true;
-        timer_ = this->create_wall_timer( 0.5s, std::bind(&HandMazeSolver::tick_function, this));
+        timer_ = this->create_wall_timer( 0.05s, std::bind(&HandMazeSolver::tick_function, this));
         blackboard_ = BT::Blackboard::create();
     }
 
