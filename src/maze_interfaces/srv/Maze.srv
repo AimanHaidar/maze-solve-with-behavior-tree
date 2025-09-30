@@ -1,0 +1,8 @@
+# Request
+string name
+
+---
+# Return
+int16 rows
+int16 cols
+float64[] maze
