@@ -4,6 +4,7 @@
 #include "behaviortree_cpp/blackboard.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "std_msgs/msg/int32.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include <string>
 #include <iostream>
 #include "maze_solver/mazes.hpp"
@@ -300,6 +301,36 @@ private:
     Pose currentPose;
 };
 
+class PublishToGui : public BT::StatefulActionNode {
+public:
+    PublishToGui(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {}
+
+    BT::NodeStatus onStart(){
+        std::string topic = getInput<std::string>("topic_name").value();
+        publisher_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node")->create_publisher<geometry_msgs::msg::Point>(topic, 10);
+        currentPose = config().blackboard->get<Pose>("currentPose");
+        return BT::NodeStatus::RUNNING;
+    }
+    BT::NodeStatus onRunning(){
+        geometry_msgs::msg::Point msg;
+        msg.x = currentPose.x;
+        msg.y = currentPose.y;
+        msg.z = currentPose.direction;
+        publisher_->publish(msg);
+        return BT::NodeStatus::SUCCESS;
+    }
+    void onHalted() { return; }
+    static BT::PortsList providedPorts() {
+      return {
+        BT::InputPort<std::string>("topic_name"),
+      };
+    }
+private:
+    Pose currentPose;
+    rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr publisher_;
+};
+
 class HandMazeSolver : public rclcpp::Node {
 public:
     HandMazeSolver() : Node("hand_maze_solver") {
@@ -342,6 +373,7 @@ private:
         factory_.registerNodeType<IsBackOpen>("IsBackOpen");
         factory_.registerNodeType<RecordPose>("RecordPose");
         factory_.registerNodeType<IsLoopState>("IsLoopState");
+        factory_.registerNodeType<PublishToGui>("PublishToGui");
         // Load XML file
         this->declare_parameter<std::string>("tree_xml_file", "/home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/trees/one_hand_maze_solver.xml");
         std::string tree_file;
