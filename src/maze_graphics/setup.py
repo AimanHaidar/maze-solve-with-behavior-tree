@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'visualize_mazing = maze_graphics.visualisze_mazing:main',
         ],
     },
 )
