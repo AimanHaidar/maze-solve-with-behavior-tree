@@ -23,7 +23,9 @@ class MazeVisualizer(Node):
         self.maze_client = self.create_client(Maze,"maze")
         while not self.maze_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
-        self.call_maze("big")
+        self.maze_size_parameter_ = self.declare_parameter("maze_size","big")
+        maze_size = self.get_parameter("maze_size").value
+        self.call_maze(maze_size)
 
     def call_maze(self, maze_size):
         while not self.maze_client.wait_for_service(1.0):
