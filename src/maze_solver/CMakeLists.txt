@@ -11,9 +11,10 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(maze_interfaces REQUIRED)
 
 add_executable( one_hand_maze_solver src/one_hand_maze_solver.cpp ) 
-ament_target_dependencies(one_hand_maze_solver rclcpp std_msgs geometry_msgs behaviortree_cpp)
+ament_target_dependencies(one_hand_maze_solver rclcpp std_msgs geometry_msgs behaviortree_cpp maze_interfaces)
 
 include_directories(
   include

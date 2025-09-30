@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 #include "maze_solver/mazes.hpp"
+#include "maze_interfaces/srv/maze.hpp"
 
 // function to get the next Pose based on current Pose and direction
 Pose getNextPose(const Pose current, Direction dir) {
@@ -65,6 +66,7 @@ void move(Pose& current, Direction move_dir) {
 
 
 using namespace std::chrono_literals;
+using namespace std::placeholders;
 
 class IsWallHandWayOpen : public BT::StatefulActionNode{
 public:
@@ -336,22 +338,27 @@ public:
     HandMazeSolver() : Node("hand_maze_solver") {
         RCLCPP_INFO(this->get_logger(), "Starting One Hand Maze Solver Node");
         first_ = true;
+        start_ = false;
         timer_ = this->create_wall_timer( 0.05s, std::bind(&HandMazeSolver::tick_function, this));
         blackboard_ = BT::Blackboard::create();
-        this->declare_parameter<std::string>("maze_size", "small");
-        std::string maze_size;
-        this->get_parameter("maze_size", maze_size);
-        std::cout << "Selected maze size: " << maze_size << std::endl;
-        if(maze_size == "small") {
-            maze = small_maze;
-        } else if(maze_size == "middle") {
-            maze = middle_maze;
-        } else if(maze_size == "big") {
-            maze = big_maze;
-        } else {
-            RCLCPP_WARN(this->get_logger(), "Invalid maze_size %s parameter. Defaulting to 'small'.", maze_size.c_str());
-            maze = small_maze;
-        }
+        // this->declare_parameter<std::string>("maze_size", "small");
+        // std::string maze_size;
+        // this->get_parameter("maze_size", maze_size);
+        // std::cout << "Selected maze size: " << maze_size << std::endl;
+        // if(maze_size == "small") {
+        //     maze = small_maze;
+        // } else if(maze_size == "middle") {
+        //     maze = middle_maze;
+        // } else if(maze_size == "big") {
+        //     maze = big_maze;
+        // } else {
+        //     RCLCPP_WARN(this->get_logger(), "Invalid maze_size %s parameter. Defaulting to 'small'.", maze_size.c_str());
+        //     maze = small_maze;
+        // }
+
+        maze_service_ = this->create_service<maze_interfaces::srv::Maze>(
+            "maze", std::bind(&HandMazeSolver::callbackMaze, this, _1, _2));
+        
 
     }
 
@@ -383,21 +390,51 @@ private:
     }
 
     void tick_function() {
-      if( first_) {
-        RCLCPP_INFO(this->get_logger(), "Initializing Behavior Tree");
-          init_btree();
-          first_ = false;
-      }
-      auto currentPose = blackboard_->get<Pose>("currentPose");
-      RCLCPP_INFO(this->get_logger(), "CURRENT Pose: x=%d, y=%d, direction=%d", currentPose.x, currentPose.y, currentPose.direction);
-      tree_.tickOnce();
+        if(start_){
+            if( first_) {
+                RCLCPP_INFO(this->get_logger(), "Initializing Behavior Tree");
+                init_btree();
+                first_ = false;
+            }
+            auto currentPose = blackboard_->get<Pose>("currentPose");
+            RCLCPP_INFO(this->get_logger(), "CURRENT Pose: x=%d, y=%d, direction=%d", currentPose.x, currentPose.y, currentPose.direction);
+            tree_.tickOnce();
+        }
+    }
+
+    void callbackMaze(
+        const std::shared_ptr<maze_interfaces::srv::Maze::Request> request,
+        std::shared_ptr<maze_interfaces::srv::Maze::Response> response)
+        {
+        start_ = true;
+        RCLCPP_INFO(this->get_logger(), "Received maze size request: %s", request->name.c_str());
+        if(request->name == "small") {
+            maze = small_maze;
+        } else if(request->name == "middle") {
+            maze = middle_maze;
+        } else if(request->name == "big") {
+            maze = big_maze;
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Invalid maze size %s request. Defaulting to 'small'.", request->name.c_str());
+            maze = small_maze;
+        }
+        response->rows = maze.size();
+        response->cols = maze[0].size();
+
+        for (int y = 0; y < maze.size(); ++y) {
+            for (int x = 0; x < maze[0].size(); ++x) {
+                response->maze.push_back(static_cast<double>(maze[y][x]));
+            }
+        }
     }
     BT::BehaviorTreeFactory factory_;
     rclcpp::TimerBase::SharedPtr timer_;
     BT::Blackboard::Ptr blackboard_;
     bool first_;
+    bool start_;
     BT::Tree tree_;
     Maze maze;
+    rclcpp::Service<maze_interfaces::srv::Maze>::SharedPtr maze_service_;
 };
 
 int main(int argc, char * argv[]) {
