@@ -112,7 +112,7 @@ public:
     BT::NodeStatus onRunning(){
         // next position toward the wall hand
         Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, wall_hand_));
-        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+        if(maze[nextPosition.y][nextPosition.x] == PATH || maze[nextPosition.y][nextPosition.x] == GOAL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand way is open");
             currentPosition = nextPosition;
             config().blackboard->set("currentPosition", currentPosition);
@@ -177,7 +177,7 @@ public:
     BT::NodeStatus onRunning() {
         Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, UP));
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Checking front cell at (x=%d, y=%d)", nextPosition.x, nextPosition.y);
-        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+        if(maze[nextPosition.y][nextPosition.x] == PATH || maze[nextPosition.y][nextPosition.x] == GOAL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Front way is open");
             currentPosition = nextPosition;
             config().blackboard->set("currentPosition", currentPosition);
@@ -211,7 +211,7 @@ public:
 
     BT::NodeStatus onRunning() {
         Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, other_hand_));
-        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+        if(maze[nextPosition.y][nextPosition.x] == PATH || maze[nextPosition.y][nextPosition.x] == GOAL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Other hand way is open");
             currentPosition = nextPosition;
             config().blackboard->set("currentPosition", currentPosition);
@@ -243,7 +243,7 @@ public:
 
     BT::NodeStatus onRunning() {
         Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, DOWN));
-        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+        if(maze[nextPosition.y][nextPosition.x] == PATH || maze[nextPosition.y][nextPosition.x] == GOAL) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Back way is open");
             currentPosition = nextPosition;
             config().blackboard->set("currentPosition", currentPosition);
