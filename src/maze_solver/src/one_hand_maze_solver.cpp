@@ -14,12 +14,12 @@ struct Position {
     Direction direction;
 };
 
-Position initial_position = {1, 1, RIGHT};
+Position initialPosition = {1, 1, RIGHT};
 
 using Maze = std::vector<std::vector<int>>;
 
 // function to get the next position based on current position and direction
-Position getNextPosition(const Position& current, Direction dir) {
+Position getNextPosition(const Position current, Direction dir) {
     Position next = current;
     switch (dir) {
         case UP:    next.y -= 1; break;
@@ -29,24 +29,36 @@ Position getNextPosition(const Position& current, Direction dir) {
     }
     return next;
 }
-
-Direction relativeDirection(const Position& current, Direction rel) {
+/**
+*  @param current The current position of the robot
+*  @param rel the direction of the frame in which you want to get relative direction to it
+*  @return The absolute direction (relative to maze)
+*/
+Direction absoluteDirection(const Position& current, Direction rel) {
     switch (current.direction) {
         case UP:
             if (rel == LEFT) return LEFT;
-            if (rel == RIGHT) return RIGHT;
+            else if (rel == RIGHT) return RIGHT;
+            else if (rel == UP) return UP;
+            else if (rel == DOWN) return DOWN;
             break;
         case DOWN:
             if (rel == LEFT) return RIGHT;
-            if (rel == RIGHT) return LEFT;
+            else if (rel == RIGHT) return LEFT;
+            else if (rel == UP) return DOWN;
+            else if (rel == DOWN) return UP;
             break;
         case LEFT:
             if (rel == LEFT) return DOWN;
-            if (rel == RIGHT) return UP;
+            else if (rel == RIGHT) return UP;
+            else if (rel == UP) return LEFT;
+            else if (rel == DOWN) return RIGHT;
             break;
         case RIGHT:
             if (rel == LEFT) return UP;
-            if (rel == RIGHT) return DOWN;
+            else if (rel == RIGHT) return DOWN;
+            else if (rel == UP) return RIGHT;
+            else if (rel == DOWN) return LEFT;
             break;
     }
 }
@@ -75,12 +87,10 @@ using namespace std::chrono_literals;
 class IsWallHandWayOpen : public BT::StatefulActionNode{
 public:
     IsWallHandWayOpen(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::StatefulActionNode(name, config) {
-            this->config = config;
-        }
+        : BT::StatefulActionNode(name, config){}
 
     BT::NodeStatus onStart() {
-        current_position = config.blackboard->get<Position>("current_position");
+        currentPosition = config().blackboard->get<Position>("currentPosition");
         std::string wall_hand_str;
         getInput<std::string>("wall_hand", wall_hand_str);
         if (wall_hand_str == "left") {
@@ -96,11 +106,11 @@ public:
 
     BT::NodeStatus onRunning(){
         // next position toward the wall hand
-        Position nextPosition = getNextPosition(current_position, relativeDirection(current_position, wall_hand_));
+        Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, wall_hand_));
         if(maze[nextPosition.y][nextPosition.x] == PATH) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand way is open");
-            move(current_position, relativeDirection(current_position, wall_hand_));
-            config.blackboard->set("current_position", current_position);
+            currentPosition = nextPosition;
+            config().blackboard->set("currentPosition", currentPosition);
             return BT::NodeStatus::SUCCESS;
         } else {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Wall hand is closed");
@@ -118,8 +128,68 @@ public:
 
 private:
     Direction wall_hand_;
-    Position current_position;
-    BT::NodeConfiguration config;
+    Position currentPosition;
+};
+
+class IsGoal : public BT::StatefulActionNode {
+public:
+    IsGoal(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {        }
+    
+    BT::NodeStatus onStart() {
+        return BT::NodeStatus::RUNNING;
+    }
+
+    BT::NodeStatus onRunning() {
+        if(maze[currentPosition.y][currentPosition.x] == GOAL) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Goal Reached!");
+            return BT::NodeStatus::SUCCESS;
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Not at Goal yet.");
+            return BT::NodeStatus::FAILURE;
+        }
+    }
+    void onHalted() { return; }
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+
+private:
+    Position currentPosition;
+};
+
+class IsFrontOpen : public BT::StatefulActionNode{
+public:
+    IsFrontOpen(const std::string& name, const BT::NodeConfiguration& config)
+        : BT::StatefulActionNode(name, config) {}
+
+    BT::NodeStatus onStart() {
+        currentPosition = config().blackboard->get<Position>("currentPosition");
+        return BT::NodeStatus::RUNNING;
+    }
+
+    BT::NodeStatus onRunning() {
+        Position nextPosition = getNextPosition(currentPosition, absoluteDirection(currentPosition, UP));
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Checking front cell at (x=%d, y=%d)", nextPosition.x, nextPosition.y);
+        if(maze[nextPosition.y][nextPosition.x] == PATH) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Front way is open");
+            currentPosition = nextPosition;
+            config().blackboard->set("currentPosition", currentPosition);
+            return BT::NodeStatus::SUCCESS;
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Front way is closed");
+            return BT::NodeStatus::FAILURE;
+        }
+    }
+
+    void onHalted() { return; }
+
+    static BT::PortsList providedPorts() {
+      return {};
+    }
+
+private:
+    Position currentPosition;
 };
 
 class HandMazeSolver : public rclcpp::Node {
@@ -136,10 +206,13 @@ private:
     void init_btree() {
 
         blackboard_->set<rclcpp::Node::SharedPtr>("node", this->shared_from_this());
-        blackboard_->set<Position>("current_position", initial_position);
+        blackboard_->set<Position>("currentPosition", initialPosition);
         blackboard_->set<Maze>("maze", maze);
-        // TODO  set tree
+        //set tree
         factory_.registerNodeType<IsWallHandWayOpen>("IsWallHandWayOpen");
+        factory_.registerNodeType<IsGoal>("IsGoal");
+        factory_.registerNodeType<IsFrontOpen>("IsFrontOpen");
+        // Load XML file
         this->declare_parameter<std::string>("tree_xml_file", "/home/aymanhadair/ROS2/BahaviorTree/src/maze_solver/trees/one_hand_maze_solver.xml");
         std::string tree_file;
         this->get_parameter("tree_xml_file", tree_file);
@@ -153,6 +226,8 @@ private:
           init_btree();
           first_ = false;
       }
+      auto currentPosition = blackboard_->get<Position>("currentPosition");
+      RCLCPP_INFO(this->get_logger(), "CURRENT POSITION: x=%d, y=%d, direction=%d", currentPosition.x, currentPosition.y, currentPosition.direction);
       tree_.tickOnce();
     }
     BT::BehaviorTreeFactory factory_;
