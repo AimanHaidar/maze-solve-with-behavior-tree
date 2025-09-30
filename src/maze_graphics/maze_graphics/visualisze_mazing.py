@@ -2,11 +2,14 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
 import time
-from .maze_gui import MazeWindow
+from .maze_gui import MazeWidget
 from .maze_gui import Pose
 from maze_interfaces.srv import Maze
 import sys
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
+from threading import Thread
+from rclpy.executors import MultiThreadedExecutor
+from PyQt5.QtCore import QTimer
 
 class MazeVisualizer(Node):
     def __init__(self):
@@ -20,7 +23,7 @@ class MazeVisualizer(Node):
         self.maze_client = self.create_client(Maze,"maze")
         while not self.maze_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
-        self.call_maze("small")
+        self.call_maze("big")
 
     def call_maze(self, maze_size):
         while not self.maze_client.wait_for_service(1.0):
@@ -37,16 +40,43 @@ class MazeVisualizer(Node):
     def listener_callback(self, msg):
         self.current_pose = msg
         self.get_logger().info(f'Received: x={self.current_pose.x}, y={self.current_pose.y}, direction={self.current_pose.z}')
-    
-    def show_maze(self):
-        app = QApplication(sys.argv)
-        window = MazeWindow(self.maze)
-        window.show()
-        sys.exit(app.exec_())
+
+
+class MazeWindow(QMainWindow):
+    def __init__(self, node):
+        super().__init__()
+        self.setWindowTitle("Maze Robot Viewer")
+        self.maze_widget = MazeWidget(node.maze)
+        self.setCentralWidget(self.maze_widget)
+
+        self.show()
+
+        # Timer to refresh window
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda: self.maze_widget.move_robot(node.current_pose))
+        self.timer.start(10)  # ms
 
 def main(args=None):
     rclpy.init(args=args)
-    maze_visualizer = MazeVisualizer()
-    rclpy.spin(maze_visualizer)
-    maze_visualizer.destroy_node()
-    rclpy.shutdown()
+
+    hmi_node = MazeVisualizer()
+    executor = MultiThreadedExecutor()
+    executor.add_node(hmi_node)
+    thread = Thread(target=executor.spin)
+    thread.start()
+    hmi_node.get_logger().info("Spinned ROS2 Node . . .")
+    time.sleep(1)  # Wait a moment to ensure the maze is received
+    app = QApplication(sys.argv)
+    HMI = MazeWindow(hmi_node)
+    # Start the ROS2 node on a separate thread
+    
+
+    # Let the app running on the main thread
+    try:
+        HMI.show()
+        sys.exit(app.exec_())
+
+    finally:
+        hmi_node.get_logger().info("Shutting down ROS2 Node . . .")
+        hmi_node.destroy_node()
+        executor.shutdown()
