@@ -21,7 +21,7 @@ the "Is**" Nodes check and move the robot
 
 ## Usage
 ```bash
-cd behavior-tree-maze-solver-with-ros2
+cd maze-solve-with-behavior-tree
 uv sync
 
 colcon build
