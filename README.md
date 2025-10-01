@@ -11,9 +11,12 @@ this packages contain example of using behavior tree to solve maze and show grap
 ---
 
 **behavior tree:**
-the Is Node check and move the robot
+the "Is**" Nodes check and move the robot
 
-![Alt text](screenshots/behavior_tree_hor1.png)
+<img src="screenshots/behavior_tree.svg" alt="Behavior Tree" height="400" width="500"/>
+
+
+<!-- ![Alt text]() -->
 
 
 ## Usage
