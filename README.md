@@ -1,6 +1,6 @@
 # Behavior Tree Maze Solver With ROS2
 
-this packages contain example of using behavior tree to solve maze and show graphical window for the search process
+these packages contain example of using behavior tree to solve maze by stick one hand with the wall and show graphical pyqt5 window for the search process
 
 ---
 
